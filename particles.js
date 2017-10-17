@@ -131,7 +131,8 @@ var pJS = function(tag_id, params){
       modes: {},
       vendors:{}
     },
-    tmp: {}
+    tmp: {},
+    fps: 60,
   };
 
   var pJS = this.pJS;
@@ -180,7 +181,33 @@ var pJS = function(tag_id, params){
 
   };
 
+  pJS.fn.requestAnimFrame = (function(){
+    if (params.fps && params.fps != 60) {
+      return function(callback){
+        window.setTimeout(callback, 1000 / params.fps);
+      };
+    }
+    return  window.requestAnimationFrame ||
+      window.webkitRequestAnimationFrame ||
+      window.mozRequestAnimationFrame    ||
+      window.oRequestAnimationFrame      ||
+      window.msRequestAnimationFrame     ||
+      function(callback){
+        window.setTimeout(callback, 1000 / 60);
+      };
+  })();
 
+  pJS.fn.cancelRequestAnimFrame = ( function() {
+    if (params.fps && params.fps != 60) {
+      return clearTimeout;
+    }
+    return window.cancelAnimationFrame         ||
+      window.webkitCancelRequestAnimationFrame ||
+      window.mozCancelRequestAnimationFrame    ||
+      window.oCancelRequestAnimationFrame      ||
+      window.msCancelRequestAnimationFrame     ||
+      clearTimeout
+  } )();
 
   /* ---------- pJS functions - canvas ------------ */
 
@@ -657,8 +684,8 @@ var pJS = function(tag_id, params){
   pJS.fn.particlesRefresh = function(){
 
     /* init all */
-    cancelRequestAnimFrame(pJS.fn.checkAnimFrame);
-    cancelRequestAnimFrame(pJS.fn.drawAnimFrame);
+    pJS.fn.cancelRequestAnimFrame(pJS.fn.checkAnimFrame);
+    pJS.fn.cancelRequestAnimFrame(pJS.fn.drawAnimFrame);
     pJS.tmp.source_svg = undefined;
     pJS.tmp.img_obj = undefined;
     pJS.tmp.count_svg = 0;
@@ -1317,29 +1344,29 @@ var pJS = function(tag_id, params){
 
         if(pJS.tmp.count_svg >= pJS.particles.number.value){
           pJS.fn.particlesDraw();
-          if(!pJS.particles.move.enable) cancelRequestAnimFrame(pJS.fn.drawAnimFrame);
-          else pJS.fn.drawAnimFrame = requestAnimFrame(pJS.fn.vendors.draw);
+          if(!pJS.particles.move.enable) pJS.fn.cancelRequestAnimFrame(pJS.fn.drawAnimFrame);
+          else pJS.fn.drawAnimFrame = pJS.fn.requestAnimFrame(pJS.fn.vendors.draw);
         }else{
           //console.log('still loading...');
-          if(!pJS.tmp.img_error) pJS.fn.drawAnimFrame = requestAnimFrame(pJS.fn.vendors.draw);
+          if(!pJS.tmp.img_error) pJS.fn.drawAnimFrame = pJS.fn.requestAnimFrame(pJS.fn.vendors.draw);
         }
 
       }else{
 
         if(pJS.tmp.img_obj != undefined){
           pJS.fn.particlesDraw();
-          if(!pJS.particles.move.enable) cancelRequestAnimFrame(pJS.fn.drawAnimFrame);
-          else pJS.fn.drawAnimFrame = requestAnimFrame(pJS.fn.vendors.draw);
+          if(!pJS.particles.move.enable) pJS.fn.cancelRequestAnimFrame(pJS.fn.drawAnimFrame);
+          else pJS.fn.drawAnimFrame = pJS.fn.requestAnimFrame(pJS.fn.vendors.draw);
         }else{
-          if(!pJS.tmp.img_error) pJS.fn.drawAnimFrame = requestAnimFrame(pJS.fn.vendors.draw);
+          if(!pJS.tmp.img_error) pJS.fn.drawAnimFrame = pJS.fn.requestAnimFrame(pJS.fn.vendors.draw);
         }
 
       }
 
     }else{
       pJS.fn.particlesDraw();
-      if(!pJS.particles.move.enable) cancelRequestAnimFrame(pJS.fn.drawAnimFrame);
-      else pJS.fn.drawAnimFrame = requestAnimFrame(pJS.fn.vendors.draw);
+      if(!pJS.particles.move.enable) pJS.fn.cancelRequestAnimFrame(pJS.fn.drawAnimFrame);
+      else pJS.fn.drawAnimFrame = pJS.fn.requestAnimFrame(pJS.fn.vendors.draw);
     }
 
   };
@@ -1351,10 +1378,10 @@ var pJS = function(tag_id, params){
     if(pJS.particles.shape.type == 'image'){
 
       if(pJS.tmp.img_type == 'svg' && pJS.tmp.source_svg == undefined){
-        pJS.tmp.checkAnimFrame = requestAnimFrame(check);
+        pJS.tmp.checkAnimFrame = pJS.fn.requestAnimFrame(check);
       }else{
         //console.log('images loaded! cancel check');
-        cancelRequestAnimFrame(pJS.tmp.checkAnimFrame);
+        pJS.fn.cancelRequestAnimFrame(pJS.tmp.checkAnimFrame);
         if(!pJS.tmp.img_error){
           pJS.fn.vendors.init();
           pJS.fn.vendors.draw();
@@ -1425,26 +1452,6 @@ Object.deepExtend = function(destination, source) {
   }
   return destination;
 };
-
-window.requestAnimFrame = (function(){
-  return  window.requestAnimationFrame ||
-    window.webkitRequestAnimationFrame ||
-    window.mozRequestAnimationFrame    ||
-    window.oRequestAnimationFrame      ||
-    window.msRequestAnimationFrame     ||
-    function(callback){
-      window.setTimeout(callback, 1000 / 60);
-    };
-})();
-
-window.cancelRequestAnimFrame = ( function() {
-  return window.cancelAnimationFrame         ||
-    window.webkitCancelRequestAnimationFrame ||
-    window.mozCancelRequestAnimationFrame    ||
-    window.oCancelRequestAnimationFrame      ||
-    window.msCancelRequestAnimationFrame     ||
-    clearTimeout
-} )();
 
 function hexToRgb(hex){
   // By Tim Down - http://stackoverflow.com/a/5624139/3493650
